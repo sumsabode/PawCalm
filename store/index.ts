@@ -1,5 +1,19 @@
 import { create } from 'zustand'
 
+export type ConcernType = 'not_eating' | 'low_energy' | 'vomiting' | 'bathroom_issues' | 'unusual_barking' | 'aggression' | 'limping' | 'something_else'
+export type OnsetTiming = 'within_the_hour' | 'earlier_today' | 'yesterday' | 'few_days' | 'week_or_more'
+export type PhysicalSymptom = 'excessive_drooling' | 'shaking' | 'coughing' | 'sneezing' | 'eye_discharge' | 'swelling' | 'skin_changes' | 'bad_breath' | 'excessive_thirst' | 'weight_change' | 'none'
+export type RecentChange = 'new_food' | 'moved_home' | 'new_pet' | 'new_family_member' | 'schedule_change' | 'boarding_travel' | 'weather_change' | 'new_medication' | 'vet_visit' | 'loss_of_companion' | 'nothing_changed'
+
+export interface ConcernAssessmentInput {
+  concernTypes: ConcernType[]
+  additionalNotes: string
+  onsetTiming: OnsetTiming | null
+  physicalSymptoms: PhysicalSymptom[]
+  recentChanges: RecentChange[]
+  worryLevel: 1 | 2 | 3 | 4 | 5 | null
+}
+
 export type DogSex = 'male' | 'female'
 export type SpayedNeuteredStatus = 'yes' | 'no' | 'not_sure'
 export type EatingPattern = 'eats_everything' | 'moderate_eater' | 'picky_eater' | 'variable'
@@ -32,6 +46,8 @@ interface AppState {
   setDogProfile: (profile: DogProfile) => void
   activeTab: string
   setActiveTab: (tab: string) => void
+  currentAssessment: ConcernAssessmentInput | null
+  setCurrentAssessment: (input: ConcernAssessmentInput) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -39,4 +55,6 @@ export const useAppStore = create<AppState>((set) => ({
   setDogProfile: (profile) => set({ dogProfile: profile }),
   activeTab: '/',
   setActiveTab: (tab) => set({ activeTab: tab }),
+  currentAssessment: null,
+  setCurrentAssessment: (input) => set({ currentAssessment: input }),
 }))
