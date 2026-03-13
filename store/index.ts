@@ -18,6 +18,14 @@ export interface ConcernAssessmentInput {
 
 export type Recommendation = 'monitor' | 'try_this' | 'call_vet'
 
+export type ResolutionOutcome = 'resolved_itself' | 'tried_something' | 'visited_vet'
+
+export interface Resolution {
+  outcome: ResolutionOutcome
+  notes: string
+  resolvedAt: Date
+}
+
 export interface HistoryEntry {
   id: string
   concernSummary: string
@@ -25,6 +33,7 @@ export interface HistoryEntry {
   createdAt: Date
   resolved: boolean | null
   result?: AssessmentResult
+  resolution?: Resolution
 }
 
 export interface AssessmentResult {
@@ -74,6 +83,7 @@ interface AppState {
   setAssessmentResult: (result: AssessmentResult) => void
   assessmentHistory: HistoryEntry[]
   addToHistory: (entry: HistoryEntry) => void
+  resolveAssessment: (id: string, outcome: ResolutionOutcome, notes: string) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -87,4 +97,12 @@ export const useAppStore = create<AppState>((set) => ({
   setAssessmentResult: (result) => set({ assessmentResult: result }),
   assessmentHistory: [...MOCK_HISTORY],
   addToHistory: (entry) => set((s) => ({ assessmentHistory: [...s.assessmentHistory, entry] })),
+  resolveAssessment: (id, outcome, notes) =>
+    set((s) => ({
+      assessmentHistory: s.assessmentHistory.map((e) =>
+        e.id === id
+          ? { ...e, resolved: true, resolution: { outcome, notes, resolvedAt: new Date() } }
+          : e,
+      ),
+    })),
 }))

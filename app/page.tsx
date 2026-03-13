@@ -7,6 +7,7 @@ import DogProfileCard from '@/components/home/DogProfileCard'
 import LogConcernButton from '@/components/home/LogConcernButton'
 import RecentAssessments from '@/components/home/RecentAssessments'
 import QuickLog from '@/components/home/QuickLog'
+import FollowUpBanner from '@/components/home/FollowUpBanner'
 
 export default function HomePage() {
   const dogProfile = useAppStore((s) => s.dogProfile)
@@ -40,6 +41,9 @@ export default function HomePage() {
 
         {/* Primary CTA */}
         <LogConcernButton />
+
+        {/* Follow-up resolution banner */}
+        <FollowUpBanner />
 
         {/* Recent assessments */}
         <RecentAssessments assessments={MOCK_ASSESSMENTS} dogName={dogName} />
