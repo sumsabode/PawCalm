@@ -51,16 +51,22 @@ export default function ProcessingPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             dog_profile: {
+              species:           dogProfile?.type ?? 'dog',
               name:              dogProfile?.name ?? 'Unknown',
               breed:             dogProfile?.breed ?? 'Unknown',
               age_years:         dogProfile?.ageYears ?? null,
               is_puppy:          dogProfile?.isPuppy ?? false,
               weight_lbs:        dogProfile?.weightLbs ?? 0,
+              sex:               dogProfile?.sex ?? null,
               health_conditions: dogProfile?.healthConditions ?? [],
               medications:       dogProfile?.medications ?? '',
               normal_eating:     dogProfile?.normalEating ?? '',
               normal_energy:     dogProfile?.normalEnergy ?? '',
               vet_clinic:        dogProfile?.vetClinicName ?? '',
+              // Cat-specific fields
+              indoor_outdoor:    dogProfile?.indoorOutdoor ?? null,
+              normal_litter_box: dogProfile?.normalLitterBox ?? null,
+              normal_grooming:   dogProfile?.normalGrooming ?? null,
             },
             concern: {
               concern_types:    assessment.concernTypes,

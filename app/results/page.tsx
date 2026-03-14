@@ -99,7 +99,8 @@ export default function ResultsPage() {
   const assessment   = useAppStore((s) => s.currentAssessment)
   const result       = useAppStore((s) => s.assessmentResult)
   const addToHistory = useAppStore((s) => s.addToHistory)
-  const dogName      = dogProfile?.name ?? 'Your dog'
+  const petName      = dogProfile?.name ?? (dogProfile?.type === 'cat' ? 'Your cat' : 'Your dog')
+  const dogName      = petName
 
   const [checkedActions, setCheckedActions] = useState<Set<number>>(new Set())
   const [feedback, setFeedback]             = useState<'up' | 'down' | null>(null)
