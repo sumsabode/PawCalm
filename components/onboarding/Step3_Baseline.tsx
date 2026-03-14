@@ -5,6 +5,7 @@ interface Step3Props {
   draft: DogProfileDraft
   onChange: (updates: Partial<DogProfileDraft>) => void
   errors: Record<string, string>
+  petType: 'dog' | 'cat'
 }
 
 const EATING_OPTIONS: { label: string; value: EatingPattern }[] = [
@@ -28,7 +29,21 @@ const MOOD_OPTIONS: { label: string; value: MoodPattern }[] = [
   { label: 'Anxious', value: 'anxious' },
 ]
 
-export default function Step3_Baseline({ draft, onChange, errors }: Step3Props) {
+const LITTER_OPTIONS = [
+  { label: 'Regular', value: 'regular' },
+  { label: 'Occasional issues', value: 'occasional_issues' },
+  { label: 'Frequent changes', value: 'frequent_changes' },
+  { label: 'Shared box', value: 'shared_box' },
+]
+
+const GROOMING_OPTIONS = [
+  { label: 'Normal', value: 'normal' },
+  { label: 'Excessive', value: 'excessive' },
+  { label: 'Under-grooms', value: 'under_grooms' },
+  { label: 'Varies', value: 'varies' },
+]
+
+export default function Step3_Baseline({ draft, onChange, errors, petType }: Step3Props) {
   return (
     <div className="flex flex-col gap-6 px-6 pt-4 pb-8">
       <div>
@@ -97,6 +112,42 @@ export default function Step3_Baseline({ draft, onChange, errors }: Step3Props) 
           <p className="text-call-vet-red text-xs mt-1">{errors.normalMood}</p>
         )}
       </div>
+
+      {/* Cat-only sections */}
+      {petType === 'cat' && (
+        <>
+          <div>
+            <label className="block text-sm font-semibold text-calm-navy mb-2">
+              Litter box habits
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {LITTER_OPTIONS.map((opt) => (
+                <OptionChip
+                  key={opt.value}
+                  label={opt.label}
+                  selected={draft.normalLitterBox === opt.value}
+                  onSelect={() => onChange({ normalLitterBox: opt.value })}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-calm-navy mb-2">
+              Grooming level
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {GROOMING_OPTIONS.map((opt) => (
+                <OptionChip
+                  key={opt.value}
+                  label={opt.label}
+                  selected={draft.normalGrooming === opt.value}
+                  onSelect={() => onChange({ normalGrooming: opt.value })}
+                />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

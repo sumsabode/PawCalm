@@ -52,7 +52,10 @@ export type SpayedNeuteredStatus = 'yes' | 'no' | 'not_sure'
 export type EatingPattern = 'eats_everything' | 'moderate_eater' | 'picky_eater' | 'variable'
 export type EnergyPattern = 'very_active' | 'moderately_active' | 'calm' | 'low_energy'
 export type MoodPattern = 'very_social' | 'friendly' | 'independent' | 'anxious'
-export type HealthCondition = 'allergies' | 'joint_issues' | 'heart_condition' | 'diabetes' | 'seizures' | 'none' | 'other'
+export type HealthCondition =
+  | 'allergies' | 'joint_issues' | 'heart_condition' | 'diabetes' | 'seizures'
+  | 'urinary_kidney' | 'dental_disease' | 'thyroid_issues' | 'asthma'
+  | 'none' | 'other'
 export type PetType = 'dog' | 'cat'
 
 export interface PetProfile {

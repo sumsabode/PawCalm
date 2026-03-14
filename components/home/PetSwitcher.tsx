@@ -46,7 +46,7 @@ export default function PetSwitcher() {
         })}
 
         <button
-          onClick={() => router.push('/onboarding')}
+          onClick={() => router.push('/onboarding?mode=add')}
           className="flex items-center gap-1.5 h-10 px-4 rounded-full shrink-0 bg-light-teal border border-pawcalm-teal/30"
         >
           <Plus size={14} className="text-pawcalm-teal" />

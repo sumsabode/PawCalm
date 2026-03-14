@@ -6,9 +6,10 @@ interface Step1Props {
   draft: DogProfileDraft
   onChange: (updates: Partial<DogProfileDraft>) => void
   errors: Record<string, string>
+  petType: 'dog' | 'cat'
 }
 
-export default function Step1_NamePhoto({ draft, onChange, errors }: Step1Props) {
+export default function Step1_NamePhoto({ draft, onChange, errors, petType }: Step1Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handlePhotoClick() {
@@ -28,8 +29,12 @@ export default function Step1_NamePhoto({ draft, onChange, errors }: Step1Props)
   return (
     <div className="flex flex-col items-center gap-6 px-6 pt-4 pb-8">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-calm-navy">Meet your pup!</h2>
-        <p className="text-medium-gray text-sm mt-1">Tell us your dog&apos;s name and add a photo</p>
+        <h2 className="text-2xl font-bold text-calm-navy">
+          {petType === 'cat' ? "Let's meet your kitty!" : "Let's meet your pup!"}
+        </h2>
+        <p className="text-medium-gray text-sm mt-1">
+          {petType === 'cat' ? "Tell us your cat's name and add a photo" : "Tell us your dog's name and add a photo"}
+        </p>
       </div>
 
       {/* Photo upload */}
@@ -59,7 +64,7 @@ export default function Step1_NamePhoto({ draft, onChange, errors }: Step1Props)
       {/* Name input */}
       <div className="w-full">
         <label className="block text-sm font-semibold text-calm-navy mb-1.5">
-          Dog&apos;s name <span className="text-call-vet-red">*</span>
+          Pet&apos;s name <span className="text-call-vet-red">*</span>
         </label>
         <input
           type="text"

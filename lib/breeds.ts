@@ -1,3 +1,9 @@
+export const CAT_BREEDS: string[] = [
+  'Domestic Shorthair', 'Domestic Longhair', 'Siamese', 'Maine Coon',
+  'Persian', 'British Shorthair', 'Ragdoll', 'Bengal', 'Sphynx',
+  'Tabby', 'Mixed Breed', 'Other',
+]
+
 export const BREEDS: string[] = [
   'Labrador Retriever',
   'Golden Retriever',

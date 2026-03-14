@@ -7,18 +7,20 @@ interface SearchableBreedSelectProps {
   value: string
   onChange: (breed: string) => void
   placeholder?: string
+  breeds?: string[]
 }
 
 export default function SearchableBreedSelect({
   value,
   onChange,
   placeholder = 'Search breeds...',
+  breeds = BREEDS,
 }: SearchableBreedSelectProps) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const filtered = BREEDS.filter((b) =>
+  const filtered = breeds.filter((b) =>
     b.toLowerCase().includes(query.toLowerCase())
   )
 

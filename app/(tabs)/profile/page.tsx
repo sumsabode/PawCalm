@@ -22,7 +22,19 @@ const SPAYED_LABEL: Record<SpayedNeuteredStatus, string> = { yes: 'Yes', no: 'No
 const EATING_LABEL: Record<EatingPattern, string> = { eats_everything: 'Eats everything', moderate_eater: 'Moderate eater', picky_eater: 'Picky eater', variable: 'Variable' }
 const ENERGY_LABEL: Record<EnergyPattern, string> = { very_active: 'Very active', moderately_active: 'Moderately active', calm: 'Calm', low_energy: 'Low energy' }
 const MOOD_LABEL: Record<MoodPattern, string> = { very_social: 'Very social', friendly: 'Friendly', independent: 'Independent', anxious: 'Anxious' }
-const HEALTH_LABEL: Record<HealthCondition, string> = { allergies: 'Allergies', joint_issues: 'Joint issues', heart_condition: 'Heart condition', diabetes: 'Diabetes', seizures: 'Seizures', none: 'None', other: 'Other' }
+const HEALTH_LABEL: Record<HealthCondition, string> = {
+  allergies: 'Allergies',
+  joint_issues: 'Joint issues',
+  heart_condition: 'Heart condition',
+  diabetes: 'Diabetes',
+  seizures: 'Seizures',
+  urinary_kidney: 'Urinary/Kidney issues',
+  dental_disease: 'Dental disease',
+  thyroid_issues: 'Thyroid issues',
+  asthma: 'Asthma',
+  none: 'None',
+  other: 'Other',
+}
 const REC_LABEL: Record<Recommendation, string> = { monitor: '🟢 Monitor', try_this: '🟡 Try This', call_vet: '🔴 Call Vet' }
 
 // ─── Edit option arrays (mirrors onboarding steps) ────────────────────────

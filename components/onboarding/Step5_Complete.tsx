@@ -4,6 +4,7 @@ interface Step5Props {
   profile: DogProfile
   onConfirm: () => void
   isLoading: boolean
+  isAddMode: boolean
 }
 
 const EATING_LABELS: Record<string, string> = {
@@ -27,14 +28,16 @@ const MOOD_LABELS: Record<string, string> = {
   anxious: 'Anxious',
 }
 
-export default function Step5_Complete({ profile, onConfirm, isLoading }: Step5Props) {
+export default function Step5_Complete({ profile, onConfirm, isLoading, isAddMode }: Step5Props) {
   const ageDisplay = profile.isPuppy ? 'Puppy (< 1 year)' : `${profile.ageYears} year${profile.ageYears === 1 ? '' : 's'}`
 
   return (
     <div className="flex flex-col items-center gap-6 px-6 pt-8 pb-8">
       <div className="text-center">
         <div className="text-5xl mb-3">🐾</div>
-        <h2 className="text-2xl font-bold text-calm-navy">Welcome, {profile.name}!</h2>
+        <h2 className="text-2xl font-bold text-calm-navy">
+          {isAddMode ? `Added ${profile.name} to your family!` : `Welcome, ${profile.name}!`}
+        </h2>
         <p className="text-medium-gray text-sm mt-1">
           Here&apos;s a summary of your profile
         </p>
@@ -64,6 +67,18 @@ export default function Step5_Complete({ profile, onConfirm, isLoading }: Step5P
           <SummaryRow label="Energy" value={ENERGY_LABELS[profile.normalEnergy] ?? profile.normalEnergy} />
           <SummaryRow label="Mood" value={MOOD_LABELS[profile.normalMood] ?? profile.normalMood} />
         </div>
+        {profile.type === 'cat' && profile.indoorOutdoor && (
+          <div className="border-t border-warm-gray pt-3">
+            <SummaryRow
+              label="Living"
+              value={
+                profile.indoorOutdoor === 'indoor' ? 'Indoor only'
+                : profile.indoorOutdoor === 'outdoor' ? 'Outdoor only'
+                : 'Indoor & Outdoor'
+              }
+            />
+          </div>
+        )}
         {profile.healthConditions.length > 0 && (
           <div className="border-t border-warm-gray pt-3">
             <SummaryRow
@@ -90,7 +105,7 @@ export default function Step5_Complete({ profile, onConfirm, isLoading }: Step5P
             Saving...
           </span>
         ) : (
-          'Start using PawCalm'
+          isAddMode ? `Go to ${profile.name}'s dashboard` : 'Start using PawCalm'
         )}
       </button>
     </div>

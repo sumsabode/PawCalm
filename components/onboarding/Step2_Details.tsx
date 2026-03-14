@@ -1,4 +1,5 @@
 import { DogProfileDraft } from '@/store'
+import { BREEDS, CAT_BREEDS } from '@/lib/breeds'
 import SearchableBreedSelect from './SearchableBreedSelect'
 import ToggleButton from './ToggleButton'
 
@@ -6,6 +7,7 @@ interface Step2Props {
   draft: DogProfileDraft
   onChange: (updates: Partial<DogProfileDraft>) => void
   errors: Record<string, string>
+  petType: 'dog' | 'cat'
 }
 
 const SEX_OPTIONS = [
@@ -19,7 +21,13 @@ const SPAYED_OPTIONS = [
   { label: 'Not sure', value: 'not_sure' },
 ]
 
-export default function Step2_Details({ draft, onChange, errors }: Step2Props) {
+const INDOOR_OUTDOOR_OPTIONS = [
+  { label: 'Indoor only', value: 'indoor' },
+  { label: 'Outdoor only', value: 'outdoor' },
+  { label: 'Both', value: 'both' },
+]
+
+export default function Step2_Details({ draft, onChange, errors, petType }: Step2Props) {
   const dogName = draft.name || 'your dog'
 
   return (
@@ -37,6 +45,7 @@ export default function Step2_Details({ draft, onChange, errors }: Step2Props) {
         <SearchableBreedSelect
           value={draft.breed ?? ''}
           onChange={(breed) => onChange({ breed })}
+          breeds={petType === 'cat' ? CAT_BREEDS : BREEDS}
         />
         {errors.breed && <p className="text-call-vet-red text-xs mt-1">{errors.breed}</p>}
       </div>
@@ -53,7 +62,9 @@ export default function Step2_Details({ draft, onChange, errors }: Step2Props) {
             onChange={(e) => onChange({ isPuppy: e.target.checked, ageYears: null })}
             className="w-4 h-4 accent-pawcalm-teal"
           />
-          <span className="text-sm text-calm-navy">Under 1 year old (puppy)</span>
+          <span className="text-sm text-calm-navy">
+            {petType === 'cat' ? 'Under 1 year old (kitten)' : 'Under 1 year old (puppy)'}
+          </span>
         </label>
         {!draft.isPuppy && (
           <input
@@ -117,6 +128,23 @@ export default function Step2_Details({ draft, onChange, errors }: Step2Props) {
           <p className="text-call-vet-red text-xs mt-1">{errors.spayedNeutered}</p>
         )}
       </div>
+
+      {/* Cat-only: Living situation */}
+      {petType === 'cat' && (
+        <div>
+          <label className="block text-sm font-semibold text-calm-navy mb-1.5">
+            Living situation <span className="text-call-vet-red">*</span>
+          </label>
+          <ToggleButton
+            options={INDOOR_OUTDOOR_OPTIONS}
+            value={draft.indoorOutdoor ?? null}
+            onChange={(v) => onChange({ indoorOutdoor: v as 'indoor' | 'outdoor' | 'both' })}
+          />
+          {errors.indoorOutdoor && (
+            <p className="text-call-vet-red text-xs mt-1">{errors.indoorOutdoor}</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

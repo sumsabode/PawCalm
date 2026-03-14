@@ -4,9 +4,10 @@ import OptionChip from './OptionChip'
 interface Step4Props {
   draft: DogProfileDraft
   onChange: (updates: Partial<DogProfileDraft>) => void
+  petType: 'dog' | 'cat'
 }
 
-const HEALTH_OPTIONS: { label: string; value: HealthCondition }[] = [
+const DOG_HEALTH_OPTIONS: { label: string; value: HealthCondition }[] = [
   { label: 'Allergies', value: 'allergies' },
   { label: 'Joint issues', value: 'joint_issues' },
   { label: 'Heart condition', value: 'heart_condition' },
@@ -16,7 +17,20 @@ const HEALTH_OPTIONS: { label: string; value: HealthCondition }[] = [
   { label: 'None', value: 'none' },
 ]
 
-export default function Step4_Health({ draft, onChange }: Step4Props) {
+const CAT_HEALTH_OPTIONS: { label: string; value: HealthCondition }[] = [
+  { label: 'Urinary/Kidney issues', value: 'urinary_kidney' },
+  { label: 'Allergies', value: 'allergies' },
+  { label: 'Dental disease', value: 'dental_disease' },
+  { label: 'Thyroid issues', value: 'thyroid_issues' },
+  { label: 'Diabetes', value: 'diabetes' },
+  { label: 'Heart condition', value: 'heart_condition' },
+  { label: 'Asthma', value: 'asthma' },
+  { label: 'Other', value: 'other' },
+  { label: 'None', value: 'none' },
+]
+
+export default function Step4_Health({ draft, onChange, petType }: Step4Props) {
+  const HEALTH_OPTIONS = petType === 'cat' ? CAT_HEALTH_OPTIONS : DOG_HEALTH_OPTIONS
   const selected = draft.healthConditions ?? []
 
   function toggleCondition(value: HealthCondition) {

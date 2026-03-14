@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft } from 'lucide-react'
 import { useAppStore, DogProfile, DogProfileDraft } from '@/store'
 import { saveDogProfile } from '@/lib/mockDataService'
 import ProgressBar from '@/components/onboarding/ProgressBar'
+import Step0_SpeciesPicker from '@/components/onboarding/Step0_SpeciesPicker'
 import Step1_NamePhoto from '@/components/onboarding/Step1_NamePhoto'
 import Step2_Details from '@/components/onboarding/Step2_Details'
 import Step3_Baseline from '@/components/onboarding/Step3_Baseline'
@@ -19,20 +20,26 @@ const variants = {
   exit: (direction: number) => ({ x: direction > 0 ? '-100%' : '100%', opacity: 0 }),
 }
 
+function validateStep0(petType: 'dog' | 'cat' | null): Record<string, string> {
+  return petType ? {} : { petType: 'Please select a pet type to continue' }
+}
+
 function validateStep1(draft: DogProfileDraft): Record<string, string> {
   const errs: Record<string, string> = {}
-  if (!draft.name?.trim()) errs.name = 'Please enter your dog\'s name'
+  if (!draft.name?.trim()) errs.name = "Please enter your pet's name"
   return errs
 }
 
-function validateStep2(draft: DogProfileDraft): Record<string, string> {
+function validateStep2(draft: DogProfileDraft, petType: 'dog' | 'cat' | null): Record<string, string> {
   const errs: Record<string, string> = {}
   if (!draft.breed?.trim()) errs.breed = 'Please select a breed'
   if (!draft.isPuppy && (draft.ageYears == null || draft.ageYears <= 0))
-    errs.ageYears = 'Please enter your dog\'s age'
+    errs.ageYears = 'Please enter your pet\'s age'
   if (!draft.weightLbs || draft.weightLbs <= 0) errs.weightLbs = 'Please enter a valid weight'
   if (!draft.sex) errs.sex = 'Please select a sex'
   if (!draft.spayedNeutered) errs.spayedNeutered = 'Please make a selection'
+  if (petType === 'cat' && !draft.indoorOutdoor)
+    errs.indoorOutdoor = 'Please select a living situation'
   return errs
 }
 
@@ -44,9 +51,10 @@ function validateStep3(draft: DogProfileDraft): Record<string, string> {
   return errs
 }
 
-function buildProfile(draft: DogProfileDraft): DogProfile {
+function buildProfile(draft: DogProfileDraft, type: 'dog' | 'cat'): DogProfile {
   return {
     id: crypto.randomUUID(),
+    type,
     name: draft.name!,
     photoUrl: draft.photoUrl ?? null,
     breed: draft.breed!,
@@ -61,17 +69,24 @@ function buildProfile(draft: DogProfileDraft): DogProfile {
     healthConditions: draft.healthConditions ?? [],
     medications: draft.medications ?? '',
     vetClinicName: draft.vetClinicName ?? '',
-    type: 'dog',
+    indoorOutdoor: draft.indoorOutdoor,
+    normalLitterBox: draft.normalLitterBox,
+    normalGrooming: draft.normalGrooming,
     createdAt: new Date().toISOString(),
   }
 }
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter()
-  const setDogProfile = useAppStore((s) => s.setDogProfile)
+  const searchParams = useSearchParams()
+  const isAddMode = searchParams.get('mode') === 'add'
 
-  const [step, setStep] = useState(1)
+  const addPet = useAppStore((s) => s.addPet)
+  const setActivePet = useAppStore((s) => s.setActivePet)
+
+  const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
+  const [petType, setPetType] = useState<'dog' | 'cat' | null>(null)
   const [draft, setDraft] = useState<DogProfileDraft>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -79,7 +94,6 @@ export default function OnboardingPage() {
 
   function updateDraft(updates: Partial<DogProfileDraft>) {
     setDraft((prev) => ({ ...prev, ...updates }))
-    // Clear related errors
     const keys = Object.keys(updates)
     setErrors((prev) => {
       const next = { ...prev }
@@ -88,8 +102,20 @@ export default function OnboardingPage() {
     })
   }
 
+  function handleSelectPetType(type: 'dog' | 'cat') {
+    setPetType(type)
+    setErrors((prev) => {
+      const next = { ...prev }
+      delete next.petType
+      return next
+    })
+  }
+
   function goBack() {
-    if (step <= 1) return
+    if (step === 0) {
+      if (isAddMode) router.push('/')
+      return
+    }
     setErrors({})
     setDirection(-1)
     setStep((s) => s - 1)
@@ -97,8 +123,9 @@ export default function OnboardingPage() {
 
   function goNext() {
     let errs: Record<string, string> = {}
+    if (step === 0) errs = validateStep0(petType)
     if (step === 1) errs = validateStep1(draft)
-    if (step === 2) errs = validateStep2(draft)
+    if (step === 2) errs = validateStep2(draft, petType)
     if (step === 3) errs = validateStep3(draft)
 
     if (Object.keys(errs).length > 0) {
@@ -109,8 +136,7 @@ export default function OnboardingPage() {
     setErrors({})
 
     if (step === 3) {
-      // Build snapshot before entering step 5
-      const profile = buildProfile(draft)
+      const profile = buildProfile(draft, petType!)
       setCompletedProfile(profile)
       setDirection(1)
       setStep(4)
@@ -122,15 +148,14 @@ export default function OnboardingPage() {
   }
 
   function skipStep4() {
-    const profile = completedProfile ?? buildProfile(draft)
+    const profile = completedProfile ?? buildProfile(draft, petType!)
     setCompletedProfile(profile)
     setDirection(1)
     setStep(5)
   }
 
   function advanceFromStep4() {
-    // Step 4 has no validation — build/update profile with health data and go to step 5
-    const base = completedProfile ?? buildProfile(draft)
+    const base = completedProfile ?? buildProfile(draft, petType!)
     const updated: DogProfile = {
       ...base,
       healthConditions: draft.healthConditions ?? [],
@@ -147,15 +172,14 @@ export default function OnboardingPage() {
     setIsLoading(true)
     try {
       await saveDogProfile(completedProfile)
-      setDogProfile(completedProfile)
+      addPet(completedProfile)
+      setActivePet(completedProfile.id)
       router.push('/')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Map internal step (1-5 data/confirm) to display step (1-4 for progress bar)
-  const displayStep = step // steps 1-4 = data; step 5 = complete
   const showProgress = step < 5
   const showHeader = step < 5
 
@@ -167,14 +191,14 @@ export default function OnboardingPage() {
           <button
             type="button"
             onClick={goBack}
-            disabled={step === 1}
+            disabled={step === 0 && !isAddMode}
             className="p-2 -ml-2 rounded-full disabled:opacity-0 transition-opacity"
             aria-label="Go back"
           >
             <ChevronLeft size={24} className="text-calm-navy" />
           </button>
           <span className="text-sm font-semibold text-medium-gray">
-            Step {displayStep} of 4
+            Step {step + 1} of 5
           </span>
           <div className="w-10" />
         </div>
@@ -183,7 +207,7 @@ export default function OnboardingPage() {
       {/* Progress bar */}
       {showProgress && (
         <div className="px-4 pb-4 shrink-0">
-          <ProgressBar currentStep={displayStep} />
+          <ProgressBar currentStep={step + 1} totalSteps={5} />
         </div>
       )}
 
@@ -200,30 +224,34 @@ export default function OnboardingPage() {
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="absolute inset-0 overflow-y-auto"
           >
+            {step === 0 && (
+              <Step0_SpeciesPicker petType={petType} onSelect={handleSelectPetType} errors={errors} />
+            )}
             {step === 1 && (
-              <Step1_NamePhoto draft={draft} onChange={updateDraft} errors={errors} />
+              <Step1_NamePhoto draft={draft} onChange={updateDraft} errors={errors} petType={petType ?? 'dog'} />
             )}
             {step === 2 && (
-              <Step2_Details draft={draft} onChange={updateDraft} errors={errors} />
+              <Step2_Details draft={draft} onChange={updateDraft} errors={errors} petType={petType ?? 'dog'} />
             )}
             {step === 3 && (
-              <Step3_Baseline draft={draft} onChange={updateDraft} errors={errors} />
+              <Step3_Baseline draft={draft} onChange={updateDraft} errors={errors} petType={petType ?? 'dog'} />
             )}
             {step === 4 && (
-              <Step4_Health draft={draft} onChange={updateDraft} />
+              <Step4_Health draft={draft} onChange={updateDraft} petType={petType ?? 'dog'} />
             )}
             {step === 5 && completedProfile && (
               <Step5_Complete
                 profile={completedProfile}
                 onConfirm={handleComplete}
                 isLoading={isLoading}
+                isAddMode={isAddMode}
               />
             )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Footer — steps 1-4 only */}
+      {/* Footer — steps 0-4 only */}
       {step < 5 && (
         <div className="px-4 pb-8 pt-2 shrink-0 bg-soft-cream">
           <button
@@ -245,5 +273,13 @@ export default function OnboardingPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
   )
 }
