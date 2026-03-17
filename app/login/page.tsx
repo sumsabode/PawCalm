@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PawPrint, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.co') ?? false
 
@@ -33,20 +33,23 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
+    const supabase = createClient()
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
     setIsLoading(false)
 
     if (authError) {
       setError(mapError(authError))
     } else {
+      router.refresh()
       router.push('/')
     }
   }
 
   async function handleGoogle() {
+    const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
