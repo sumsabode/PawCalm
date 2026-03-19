@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { MOCK_HISTORY } from '@/lib/mockHistory'
 import { MOCK_DOG_PROFILE } from '@/lib/mockDogProfile'
 import { MOCK_CAT_PROFILE } from '@/lib/mockCatProfile'
+import { persistDemoAccountData } from '@/lib/demo/demoStorage'
 
 export type ConcernType =
   | 'not_eating' | 'low_energy' | 'vomiting' | 'bathroom_issues'
@@ -99,6 +100,9 @@ export type DogProfile = PetProfile
 export type DogProfileDraft = Partial<Omit<PetProfile, 'id'>>
 
 interface AppState {
+  // Demo-only: which mock account is currently "logged in"
+  demoAccountEmail: string | null
+
   // Multi-pet state
   pets: PetProfile[]
   activePetId: string | null
@@ -125,10 +129,18 @@ interface AppState {
   resolveAssessment: (id: string, outcome: ResolutionOutcome, notes: string) => void
 
   // Auth
+  setDemoAccountEmail: (email: string | null) => void
+  hydrateDemoAccount: (data: {
+    pets: PetProfile[]
+    activePetId: string | null
+    assessmentHistory: HistoryEntry[]
+  }) => void
   reset: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
+  demoAccountEmail: null,
+
   pets: [MOCK_DOG_PROFILE, MOCK_CAT_PROFILE],
   activePetId: 'mock-profile-1',
   dogProfile: MOCK_DOG_PROFILE,
@@ -141,10 +153,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   addPet: (pet) =>
     set((s) => {
       const isFirst = s.pets.length === 0
-      return {
+      const nextActivePetId = isFirst ? pet.id : s.activePetId
+      const next = {
         pets: [...s.pets, pet],
         ...(isFirst ? { activePetId: pet.id, dogProfile: pet } : {}),
       }
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: next.pets,
+          activePetId: nextActivePetId ?? null,
+          assessmentHistory: s.assessmentHistory,
+        })
+      }
+      return next
     }),
 
   removePet: (petId) =>
@@ -153,25 +174,57 @@ export const useAppStore = create<AppState>((set, get) => ({
       const history = s.assessmentHistory.filter((e) => e.petId !== petId)
       if (s.activePetId === petId) {
         const next = remaining[0] ?? null
-        return { pets: remaining, assessmentHistory: history, activePetId: next?.id ?? null, dogProfile: next }
+        const res = { pets: remaining, assessmentHistory: history, activePetId: next?.id ?? null, dogProfile: next }
+        if (s.demoAccountEmail) {
+          persistDemoAccountData(s.demoAccountEmail, {
+            pets: res.pets,
+            activePetId: res.activePetId ?? null,
+            assessmentHistory: res.assessmentHistory,
+          })
+        }
+        return res
       }
-      return { pets: remaining, assessmentHistory: history }
+      const res = { pets: remaining, assessmentHistory: history }
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: res.pets,
+          activePetId: s.activePetId,
+          assessmentHistory: res.assessmentHistory,
+        })
+      }
+      return res
     }),
 
   setActivePet: (petId) =>
     set((s) => {
       const pet = s.pets.find((p) => p.id === petId) ?? null
-      return { activePetId: petId, dogProfile: pet }
+      const res = { activePetId: petId, dogProfile: pet }
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: s.pets,
+          activePetId: res.activePetId,
+          assessmentHistory: s.assessmentHistory,
+        })
+      }
+      return res
     }),
 
   updatePet: (petId, updates) =>
     set((s) => {
       const pets = s.pets.map((p) => (p.id === petId ? { ...p, ...updates } : p))
       const updated = pets.find((p) => p.id === petId) ?? null
-      return {
+      const res = {
         pets,
         ...(s.activePetId === petId ? { dogProfile: updated } : {}),
       }
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: res.pets,
+          activePetId: s.activePetId,
+          assessmentHistory: s.assessmentHistory,
+        })
+      }
+      return res
     }),
 
   getPetAssessments: (petId) => {
@@ -183,17 +236,33 @@ export const useAppStore = create<AppState>((set, get) => ({
       const exists = s.pets.find((p) => p.id === profile.id)
       if (exists) {
         const pets = s.pets.map((p) => (p.id === profile.id ? profile : p))
-        return {
+        const res = {
           pets,
           dogProfile: profile,
           activePetId: profile.id,
         }
+        if (s.demoAccountEmail) {
+          persistDemoAccountData(s.demoAccountEmail, {
+            pets: res.pets,
+            activePetId: res.activePetId,
+            assessmentHistory: s.assessmentHistory,
+          })
+        }
+        return res
       }
-      return {
+      const res = {
         pets: [...s.pets, profile],
         dogProfile: profile,
         activePetId: profile.id,
       }
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: res.pets,
+          activePetId: res.activePetId,
+          assessmentHistory: s.assessmentHistory,
+        })
+      }
+      return res
     }),
 
   activeTab: '/',
@@ -204,28 +273,67 @@ export const useAppStore = create<AppState>((set, get) => ({
   setAssessmentResult: (result) => set({ assessmentResult: result }),
   assessmentHistory: [...MOCK_HISTORY],
   addToHistory: (entry) =>
-    set((s) => ({
-      assessmentHistory: [
+    set((s) => {
+      const nextHistory = [
         ...s.assessmentHistory,
         { ...entry, petId: entry.petId ?? s.activePetId ?? undefined },
-      ],
-    })),
+      ]
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: s.pets,
+          activePetId: s.activePetId,
+          assessmentHistory: nextHistory,
+        })
+      }
+      return { assessmentHistory: nextHistory }
+    }),
   resolveAssessment: (id, outcome, notes) =>
-    set((s) => ({
-      assessmentHistory: s.assessmentHistory.map((e) =>
+    set((s) => {
+      const nextHistory = s.assessmentHistory.map((e) =>
         e.id === id
           ? { ...e, resolved: true, resolution: { outcome, notes, resolvedAt: new Date() } }
           : e,
-      ),
-    })),
+      )
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: s.pets,
+          activePetId: s.activePetId,
+          assessmentHistory: nextHistory,
+        })
+      }
+      return { assessmentHistory: nextHistory }
+    }),
 
   reset: () =>
     set({
+      demoAccountEmail: null,
       pets: [],
       activePetId: null,
       dogProfile: null,
       currentAssessment: null,
       assessmentResult: null,
       assessmentHistory: [],
+    }),
+
+  setDemoAccountEmail: (email) => set({ demoAccountEmail: email }),
+
+  hydrateDemoAccount: (data) =>
+    set((s) => {
+      const activePet = data.pets.find((p) => p.id === data.activePetId) ?? data.pets[0] ?? null
+      const activePetId = activePet?.id ?? null
+      const res = {
+        pets: data.pets,
+        activePetId,
+        dogProfile: activePet,
+        assessmentHistory: data.assessmentHistory,
+      }
+      if (s.demoAccountEmail) {
+        persistDemoAccountData(s.demoAccountEmail, {
+          pets: res.pets,
+          activePetId: res.activePetId,
+          assessmentHistory: res.assessmentHistory,
+        })
+      }
+      return res
     }),
 }))

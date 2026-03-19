@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password']
+const DEMO_COOKIE = 'pawcalm_demo'
 
 function isConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
@@ -9,13 +10,22 @@ function isConfigured(): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  if (!isConfigured()) {
+  const { pathname } = request.nextUrl
+
+  // Skip API, auth callback, and static assets
+  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
     return NextResponse.next()
   }
 
-  const { pathname } = request.nextUrl
-
-  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
+  // Demo mode: redirect unauthenticated users to login
+  if (!isConfigured()) {
+    if (PUBLIC_PATHS.includes(pathname)) {
+      return NextResponse.next()
+    }
+    const demoCookie = request.cookies.get(DEMO_COOKIE)
+    if (!demoCookie?.value) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
     return NextResponse.next()
   }
 

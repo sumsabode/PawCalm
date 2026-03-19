@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PawPrint, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
+import { DEMO_ACCOUNTS, type DemoAccount } from '@/lib/demo/demoAccounts'
 
 const isConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.co') ?? false
 
@@ -30,6 +32,7 @@ async function minDelay<T>(promise: Promise<T>, ms = 500): Promise<T> {
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { signInDemo } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -52,7 +55,17 @@ function LoginContent() {
     setError('')
 
     if (!isConfigured) {
-      router.push('/')
+      setIsLoading(true)
+      try {
+        const res = await signInDemo(email, password)
+        if (!res.ok) {
+          setError(res.error)
+          return
+        }
+        router.push(res.onboarding_complete ? '/' : '/welcome')
+      } finally {
+        setIsLoading(false)
+      }
       return
     }
 
@@ -85,6 +98,21 @@ function LoginContent() {
     })
   }
 
+  async function handleDemoLogin(a: DemoAccount) {
+    setError('')
+    setIsLoading(true)
+    try {
+      const res = await signInDemo(a.email, a.password)
+      if (!res.ok) {
+        setError(res.error)
+        return
+      }
+      router.push(res.onboarding_complete ? '/' : '/welcome')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-soft-cream flex flex-col items-center pt-20 px-6">
       <div className="w-full max-w-[400px] flex flex-col items-center gap-6">
@@ -99,10 +127,40 @@ function LoginContent() {
         {/* Demo banner */}
         {!isConfigured && (
           <div className="w-full bg-light-teal text-pawcalm-teal text-xs rounded-button px-3 py-2 text-center">
-            Running in demo mode — auth not configured.{' '}
-            <button onClick={() => router.push('/')} className="underline font-semibold">
+            Running in demo mode — pick a test account below.{' '}
+            <button onClick={() => handleDemoLogin(DEMO_ACCOUNTS[0])} className="underline font-semibold">
               Enter app →
             </button>
+          </div>
+        )}
+
+        {/* Demo accounts quick login */}
+        {!isConfigured && (
+          <div className="w-full bg-white rounded-card shadow-sm border border-warm-gray p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-calm-navy">Test accounts</h3>
+              <span className="text-[11px] text-medium-gray font-semibold">Demo mode only</span>
+            </div>
+            <div className="space-y-2">
+              {DEMO_ACCOUNTS.map((a) => (
+                <button
+                  key={a.email}
+                  type="button"
+                  onClick={() => handleDemoLogin(a)}
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-button border border-warm-gray hover:bg-gray-50 transition-colors disabled:opacity-60"
+                >
+                  <span className="flex flex-col items-start min-w-0">
+                    <span className="text-sm font-semibold text-calm-navy truncate">{a.fullName}</span>
+                    <span className="text-[11px] text-medium-gray truncate">{a.email}</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-pawcalm-teal shrink-0">Log in</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-medium-gray mt-3 leading-relaxed">
+              Each account has its own seeded pets + recent activity (stored locally in your browser).
+            </p>
           </div>
         )}
 
